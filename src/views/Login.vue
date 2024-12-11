@@ -1,6 +1,6 @@
 <template>
   <div class="login">
-    <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="login-form">
+    <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">Login</h3>
       <el-form-item prop="username">
         <el-input
@@ -16,26 +16,53 @@
           placeholder="Password"
         />
       </el-form-item>
-      <el-button type="primary" @click="handleLogin">Login</el-button>
+      <el-button type="primary" :loading="loading" @click="handleLogin">
+        Login
+      </el-button>
     </el-form>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, getCurrentInstance } from 'vue';
+import { login } from '@/api/login';
+import { ElMessage } from 'element-plus';
 
+// Form data
 const loginForm = ref({
-  username: "",
-  password: "",
+  username: '',
+  password: '',
 });
 
+// Form validation rules
 const loginRules = {
-  username: [{ required: true, message: "Please input your username", trigger: "blur" }],
-  password: [{ required: true, message: "Please input your password", trigger: "blur" }],
+  username: [{ required: true, message: 'Please input your username', trigger: 'blur' }],
+  password: [{ required: true, message: 'Please input your password', trigger: 'blur' }],
 };
 
-const handleLogin = () => {
-  console.log("Login form submitted:", loginForm.value);
+// Loading state
+const loading = ref(false);
+
+// Get the current instance to access proxy and refs
+const { proxy } = getCurrentInstance();
+
+const handleLogin = async () => {
+  // Use proxy to access the ref
+  proxy.$refs.loginRef.validate(async (valid) => {
+    if (valid) {
+      loading.value = true;
+      try {
+        const response = await login(loginForm.value);
+        ElMessage.success('Login successful!');
+        console.log('User Info:', response);
+        // Redirect to another page after login
+      } catch (error) {
+        ElMessage.error(error.message || 'Login failed');
+      } finally {
+        loading.value = false;
+      }
+    }
+  });
 };
 </script>
 
